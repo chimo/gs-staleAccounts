@@ -63,24 +63,37 @@ class StaleaccountsAction extends Action
             'modified'
         ];
 
+        // $config['staleaccounts']['inactive_period'] is number of months
+        // of inactivity before an account is considered stale.
+        // Defaults to 3
+        $inactive_period = common_config('staleaccounts', 'inactive_period') ?: 3;
+
+        // Calculate stale date (today - $inactive_period)
+        $stale_date = new DateTime();
+        $stale_date->modify('-' . $inactive_period . ' month');
+        $stale_date = $stale_date->format('Y-m-d');
+
         $dataObj = new DB_DataObject();
 
         // Custom query because I only want to hit the db once
         $dataObj->query(
-            'SELECT local_profiles.*, MAX(n.created) as latest_activity FROM
+            'SELECT * FROM
             (
-                SELECT p.*
-                FROM profile p
-                JOIN user u ON u.id = p.id
-            ) local_profiles
-            LEFT JOIN notice n ON local_profiles.id = n.profile_id
-            GROUP BY local_profiles.id;'
+                SELECT local_profiles.*, MAX(n.created) as latest_activity FROM
+                (
+                    SELECT p.*
+                    FROM profile p
+                    JOIN user u ON u.id = p.id
+                ) local_profiles
+                LEFT JOIN notice n ON local_profiles.id = n.profile_id
+                GROUP BY local_profiles.id
+                ORDER BY latest_activity
+            ) z
+            WHERE z.latest_activity < "' . $stale_date . '"
+            OR z.latest_activity IS NULL;'
         );
 
-        // TODO: Sort by latest_activity -- ascending, with "never" (null) first
         // TODO: Pagination
-        // TODO: Customizable 'stale' date
-        //       (don't show accounts with activity more recent than $date)
         $this->elementStart('ul');
 
         while($dataObj->fetch()) {
