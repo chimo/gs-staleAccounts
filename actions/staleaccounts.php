@@ -43,6 +43,9 @@ class StaleaccountsAction extends Action
             $this->clientError(_('You cannot make changes to this site.'));
         }
 
+        $this->page = isset($args['page']) ? $args['page'] + 0 : 1;
+        $this->args = $args;
+
         return true;
     }
 
@@ -73,6 +76,9 @@ class StaleaccountsAction extends Action
         $stale_date->modify('-' . $inactive_period . ' month');
         $stale_date = $stale_date->format('Y-m-d');
 
+        $offset = ($this->page - 1) * PROFILES_PER_PAGE;
+        $limit  = PROFILES_PER_PAGE + 1;
+
         $dataObj = new DB_DataObject();
 
         // Custom query because I only want to hit the db once
@@ -90,10 +96,11 @@ class StaleaccountsAction extends Action
                 ORDER BY latest_activity
             ) z
             WHERE z.latest_activity < "' . $stale_date . '"
-            OR z.latest_activity IS NULL;'
+            OR z.latest_activity IS NULL
+            LIMIT ' . $offset . ', ' . $limit . ';'
         );
 
-        // TODO: Pagination
+        $cnt = $dataObj->N;
         $this->elementStart('ul');
 
         while($dataObj->fetch()) {
@@ -110,6 +117,14 @@ class StaleaccountsAction extends Action
         }
 
         $this->elementEnd('ul');
+
+        $this->pagination(
+            $this->page > 1,
+            $cnt > PROFILES_PER_PAGE,
+            $this->page,
+            'staleaccounts',
+            $this->args
+        );
     }
 
     function showNoticeForm() {
