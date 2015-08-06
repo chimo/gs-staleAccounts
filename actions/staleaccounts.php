@@ -143,7 +143,7 @@ class StaleProfileListItem extends ProfileListItem {
         $latest_activity = $this->profile->latest_activity ?: 'NEVER';
 
         $this->action->element('p', array('class' => 'note'), 'Latest activity: ' . $latest_activity);
-   }
+    }
 
     function showActions() {
         parent::startActions();
@@ -155,11 +155,16 @@ class StaleProfileListItem extends ProfileListItem {
         $this->action->element('a', array("href" => "#"), 'Poke');
         $this->action->elementEnd('li');
 
-        // Delete action
-        // TODO: add functionality
-        $this->action->elementStart('li');
-        $this->action->element('a', array("href" => "#"), 'Delete');
-        $this->action->elementEnd('li');
+        $cur = common_current_user();
+        list($action, $r2args) = $this->out->returnToArgs();
+        $r2args['action'] = $action;
+
+        if ($cur instanceof User && $cur->hasRight(Right::DELETEUSER)) {
+            $this->elementStart('li', array('class' => 'entity_delete'));
+            $df = new DeleteUserForm($this->out, $this->profile, $r2args);
+            $df->show();
+            $this->elementEnd('li');
+        }
 
         parent::endActions();
     }
