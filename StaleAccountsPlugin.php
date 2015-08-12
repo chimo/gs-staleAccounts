@@ -12,6 +12,10 @@ class StaleAccountsPlugin extends Plugin
     {
         $m->connect('panel/staleaccounts', array('action' => 'staleaccounts'));
 
+        $m->connect(':nickname/stalereminder',
+                    array('action' => 'stalereminder'),
+                    array('nickname' => Nickname::DISPLAY_FMT));
+
         return true;
     }
 

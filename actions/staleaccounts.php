@@ -148,12 +148,21 @@ class StaleProfileListItem extends ProfileListItem {
     function showActions() {
         parent::startActions();
 
-        // Send 'poke' action
-        // TODO: rename this to something like 're-invite' or 'send reminder'
-        // TODO: add functionality
-        $this->action->elementStart('li');
-        $this->action->element('a', array("href" => "#"), 'Poke');
-        $this->action->elementEnd('li');
+        try {
+            // Throws NoSuchUserException
+            $user = $this->profile->getUser();
+
+            // Can't notify user if we don't have an email address
+            if ($user->email) {
+                $this->action->elementStart('li', 'entity_nudge');
+                $form = new StaleReminderForm($this->out, $user);
+                $form->show();
+                $this->action->elementEnd('li');
+            }
+        } catch(Exception $e) {
+            // This shouldn't be possible -- famous last words
+            common_log(LOG_ERR, $e->getMessage());
+        }
 
         $cur = common_current_user();
         list($action, $r2args) = $this->out->returnToArgs();
@@ -167,5 +176,46 @@ class StaleProfileListItem extends ProfileListItem {
         }
 
         parent::endActions();
+    }
+}
+
+class StaleReminderForm extends Form {
+    var $profile = null;
+
+    function __construct($out=null, $profile=null)
+    {
+        parent::__construct($out);
+        $this->profile = $profile;
+    }
+
+    function id()
+    {
+        return 'form_user_reminder';
+    }
+
+    function formClass()
+    {
+        return 'form_user_reminder ajax';
+    }
+
+    function action()
+    {
+        return common_local_url('stalereminder', array('nickname' => $this->profile->nickname));
+    }
+
+    function formLegend()
+    {
+        $this->out->element('legend', null, _('Remind this user'));
+    }
+
+    function formActions()
+    {
+        $this->out->submit('submit',
+                           // TRANS: Button text to reminder/ping another user.
+                           _m('BUTTON','Remind'),
+                           'submit',
+                           null,
+                           // TRANS: Button title to reminder/ping another user.
+                           _('Send a reminder to this user.'));
     }
 }
