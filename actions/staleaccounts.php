@@ -154,10 +154,10 @@ class StaleProfileListItem extends ProfileListItem {
 
             // Can't notify user if we don't have an email address
             if ($user->email) {
-                $this->action->elementStart('div', 'entity_nudge');
+                $this->action->elementStart('li', 'entity_nudge');
                 $form = new StaleReminderForm($this->out, $user);
                 $form->show();
-                $this->action->elementEnd('div');
+                $this->action->elementEnd('li');
             }else {				
 				$this->action->element('div', array('class' => 'none'), 'e-mail not confirmed!' . $user->email);				
 			}            
