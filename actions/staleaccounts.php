@@ -101,7 +101,7 @@ class StaleaccountsAction extends Action
         );
 
         $cnt = $dataObj->N;
-        $this->elementStart('ul');
+        $this->elementStart('div');
 
         while($dataObj->fetch()) {
             $profile = new Profile();
@@ -116,7 +116,7 @@ class StaleaccountsAction extends Action
             $pli->show();
         }
 
-        $this->elementEnd('ul');
+        $this->elementEnd('div');
 
         $this->pagination(
             $this->page > 1,
@@ -158,7 +158,10 @@ class StaleProfileListItem extends ProfileListItem {
                 $form = new StaleReminderForm($this->out, $user);
                 $form->show();
                 $this->action->elementEnd('li');
-            }
+            }else {				
+				$this->action->element('div', array('class' => 'none'), 'e-mail not confirmed!' . $user->email);				
+			}            
+            
         } catch(Exception $e) {
             // This shouldn't be possible -- famous last words
             common_log(LOG_ERR, $e->getMessage());
@@ -169,10 +172,10 @@ class StaleProfileListItem extends ProfileListItem {
         $r2args['action'] = $action;
 
         if ($cur instanceof User && $cur->hasRight(Right::DELETEUSER)) {
-            $this->elementStart('li', array('class' => 'entity_delete'));
+            $this->elementStart('div', array('class' => 'entity_delete'));
             $df = new DeleteUserForm($this->out, $this->profile, $r2args);
             $df->show();
-            $this->elementEnd('li');
+            $this->elementEnd('div');
         }
 
         parent::endActions();
