@@ -29,7 +29,7 @@ class StaleAccountsPlugin extends Plugin
         }
     }
 
-    function onPluginVersion(&$versions)
+    function onPluginVersion(array &$versions)
     {
         $versions[] = array('name' => 'Stale Accounts',
                             'version' => self::VERSION,
