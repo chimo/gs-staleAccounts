@@ -10,7 +10,7 @@ class StaleAccountsPlugin extends Plugin
 
     function onRouterInitialized($m)
     {
-        $m->connect('panel/staleaccounts', array('action' => 'staleaccounts'));
+        $m->connect('panel/staleaccounts', array('action' => 'staleaccountsadminpanel'));
 
         $m->connect(':nickname/stalereminder',
                     array('action' => 'stalereminder'),
@@ -24,9 +24,22 @@ class StaleAccountsPlugin extends Plugin
             $menu_title = _('Stale accounts management');
             $action_name = $nav->action->trimmed('action');
 
-            $nav->out->menuItem(common_local_url('staleaccounts'), _m('MENU','Stale Accounts'),
-                                 $menu_title, $action_name == 'staleaccounts', 'stale_accounts_admin_panel');
+            $nav->out->menuItem(common_local_url('staleaccountsadminpanel'), _m('MENU','Stale Accounts'),
+                                 $menu_title, $action_name == 'staleaccountsadminpanel', 'stale_accounts_admin_panel');
         }
+    }
+
+    /**
+     * If the plugin's installed, this should be accessible to admins
+     */
+    function onAdminPanelCheck($name, &$isOK)
+    {
+        if ($name == 'staleaccounts') {
+            $isOK = true;
+            return false;
+        }
+
+        return true;
     }
 
     function onPluginVersion(array &$versions)

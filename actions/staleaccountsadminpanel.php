@@ -3,45 +3,14 @@ if (!defined('GNUSOCIAL')) {
     exit(1);
 }
 
-class StaleaccountsAction extends Action
+class StaleaccountsadminpanelAction extends AdminPanelAction
 {
-
-    function handle($args)
-    {
-        parent::handle($args);
-
-        $this->showPage();
-    }
-
     function title() {
         return 'Stale accounts';
     }
 
     function prepare($args) {
         parent::prepare($args);
-
-        if (!common_logged_in()) {
-            $this->clientError(_('Not logged in.'));
-        }
-
-        $user = common_current_user();
-
-        assert(!empty($user));
-
-        // It must be a "real" login, not saved cookie login
-        if (!common_is_real_login()) {
-            // Cookie theft is too easy; we require automatic
-            // logins to re-authenticate before admining the site
-            common_set_returnto($this->selfUrl());
-            if (Event::handle('RedirectToLogin', array($this, $user))) {
-                common_redirect(common_local_url('login'), 303);
-            }
-        }
-
-        // User must have the right to change admin settings
-        if (!$user->hasRight(Right::CONFIGURESITE)) {
-            $this->clientError(_('You cannot make changes to this site.'));
-        }
 
         $this->page = isset($args['page']) ? $args['page'] + 0 : 1;
         $this->args = $args;
@@ -158,10 +127,10 @@ class StaleProfileListItem extends ProfileListItem {
                 $form = new StaleReminderForm($this->out, $user);
                 $form->show();
                 $this->action->elementEnd('li');
-            }else {				
-				$this->action->element('li', array('class' => 'none'), 'e-mail not confirmed!' . $user->email);	
-			}            
-            
+            } else {
+				$this->action->element('li', array('class' => 'none'), 'e-mail not confirmed!' . $user->email);
+			}
+
         } catch(Exception $e) {
             // This shouldn't be possible -- famous last words
             common_log(LOG_ERR, $e->getMessage());
