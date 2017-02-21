@@ -136,8 +136,9 @@ class StaleProfileListItem extends ProfileListItem {
                 $form->show();
                 $this->action->elementEnd('li');
             } else {
-				$this->action->element('li', array('class' => 'none'), 'e-mail not confirmed!' . $user->email);
-			}
+                $this->action->element('li', array('class' => 'none'),
+                    'e-mail not confirmed!' . $user->email);
+        }
 
         } catch(Exception $e) {
             // This shouldn't be possible -- famous last words
