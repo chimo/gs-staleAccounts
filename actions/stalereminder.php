@@ -9,9 +9,9 @@ require_once INSTALLDIR.'/lib/mail.php';
 class StaleReminderAction extends Action
 {
 
-    function handle($args)
+    function handle()
     {
-        parent::handle($args);
+        parent::handle();
 
         if (!common_logged_in()) {
             $this->clientError(_('Not logged in.'));

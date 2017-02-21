@@ -9,7 +9,7 @@ class StaleaccountsadminpanelAction extends AdminPanelAction
         return 'Stale accounts';
     }
 
-    function prepare($args) {
+    function prepare(array $args=array()) {
         parent::prepare($args);
 
         $this->page = isset($args['page']) ? $args['page'] + 0 : 1;
