@@ -70,6 +70,14 @@ class StaleaccountsadminpanelAction extends AdminPanelAction
         );
 
         $cnt = $dataObj->N;
+
+        if ($cnt === 0) {
+            $this->element('p', null,
+                'No accounts have been inactive for more than ' . $inactive_period . ' months.');
+
+            return true;
+        }
+
         $this->elementStart('ul');
 
         while($dataObj->fetch()) {
