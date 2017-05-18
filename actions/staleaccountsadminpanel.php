@@ -12,7 +12,7 @@ class StaleaccountsadminpanelAction extends AdminPanelAction
     function prepare(array $args=array()) {
         parent::prepare($args);
 
-        $this->page = isset($args['page']) ? $args['page'] + 0 : 1;
+        $this->page = $this->int('page', 1, null, 1);
         $this->args = $args;
 
         return true;
@@ -35,10 +35,15 @@ class StaleaccountsadminpanelAction extends AdminPanelAction
             'modified'
         ];
 
-        // $config['staleaccounts']['inactive_period'] is number of months
-        // of inactivity before an account is considered stale.
-        // Defaults to 3
-        $inactive_period = common_config('staleaccounts', 'inactive_period') ?: 3;
+        $inactive_period = common_config('staleaccounts', 'inactive_period');
+
+        if ($inactive_period === false) { // No config set fallback to default
+            $inactive_period = 3;
+        } else {
+            // Make sure config is a number
+            // Returns 1 if it's an object, 0 for other non-numbers
+            $inactive_period = floatval($inactive_period);
+        }
 
         // Calculate stale date (today - $inactive_period)
         $stale_date = new DateTime();
