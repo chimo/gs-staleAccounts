@@ -1,0 +1,17 @@
+.stale_profile_list {
+    list-style-type: none;
+}
+
+.stale_profile_list .entity_actions {
+    border-radius: 4px;
+}
+
+.stale_profile_list .entity_nudge {
+    margin: 0;
+}
+
+.stale_profile_list .unconfirmed_email {
+    margin-top: 7px;
+    text-align: center;
+}
+

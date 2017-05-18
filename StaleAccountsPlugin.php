@@ -42,6 +42,13 @@ class StaleAccountsPlugin extends Plugin
         return true;
     }
 
+    function onEndShowStyles($action)
+    {
+        $action->cssLink($this->path('css/stale-accounts.css'));
+
+        return true;
+    }
+
     function onPluginVersion(array &$versions)
     {
         $versions[] = array('name' => 'Stale Accounts',

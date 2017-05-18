@@ -78,7 +78,7 @@ class StaleaccountsadminpanelAction extends AdminPanelAction
             return true;
         }
 
-        $this->elementStart('ul');
+        $this->elementStart('ul', array('class' => 'stale_profile_list'));
 
         while($dataObj->fetch()) {
             $profile = new Profile();
@@ -136,8 +136,8 @@ class StaleProfileListItem extends ProfileListItem {
                 $form->show();
                 $this->action->elementEnd('li');
             } else {
-                $this->action->element('li', array('class' => 'none'),
-                    'e-mail not confirmed!' . $user->email);
+                $this->action->element('li', array('class' => 'unconfirmed_email'),
+                    'unconfirmed email' . $user->email);
         }
 
         } catch(Exception $e) {
@@ -160,6 +160,11 @@ class StaleProfileListItem extends ProfileListItem {
     }
 }
 
+/**
+ * This form uses the "form_user_nudge" class to get the envelope icon.
+ * I haven't found a way to use the "current theme's sprite file" from
+ * the plugin's stylesheet.
+ */
 class StaleReminderForm extends Form {
     var $profile = null;
 
@@ -171,12 +176,12 @@ class StaleReminderForm extends Form {
 
     function id()
     {
-        return 'form_user_reminder';
+        return 'form_user_nudge';
     }
 
     function formClass()
     {
-        return 'form_user_reminder ajax';
+        return 'form_user_nudge ajax';
     }
 
     function action()
