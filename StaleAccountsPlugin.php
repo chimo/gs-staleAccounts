@@ -1,40 +1,51 @@
 <?php
 
-if (!defined('GNUSOCIAL')) {
-    exit(1);
-}
+defined('GNUSOCIAL') || die();
 
 class StaleAccountsPlugin extends Plugin
 {
     const VERSION = '0.0.2';
 
-    function onRouterInitialized($m)
+    public function onRouterInitialized(URLMapper $m): bool
     {
-        $m->connect('panel/staleaccounts', array('action' => 'staleaccountsadminpanel'));
+        $m->connect(
+            'panel/staleaccounts',
+            ['action' => 'staleaccountsadminpanel']
+        );
 
-        $m->connect(':nickname/stalereminder',
-                    array('action' => 'stalereminder'),
-                    array('nickname' => Nickname::DISPLAY_FMT));
+        $m->connect(
+            ':nickname/stalereminder',
+            ['action' => 'stalereminder'],
+            ['nickname' => Nickname::DISPLAY_FMT]
+        );
 
         return true;
     }
 
-    function onEndAdminPanelNav($nav) {
+    public function onEndAdminPanelNav(AdminPanelNav $nav): bool
+    {
         if (AdminPanelAction::canAdmin('user')) {
-            $menu_title = _('Stale accounts management');
+            $menu_title  = _('Stale accounts management');
             $action_name = $nav->action->trimmed('action');
 
-            $nav->out->menuItem(common_local_url('staleaccountsadminpanel'), _m('MENU','Stale Accounts'),
-                                 $menu_title, $action_name == 'staleaccountsadminpanel', 'stale_accounts_admin_panel');
+            $nav->out->menuItem(
+                common_local_url('staleaccountsadminpanel'),
+                _m('MENU', 'Stale Accounts'),
+                $menu_title,
+                ($action_name === 'staleaccountsadminpanel'),
+                'stale_accounts_admin_panel'
+            );
         }
+
+        return true;
     }
 
     /**
      * If the plugin's installed, this should be accessible to admins
      */
-    function onAdminPanelCheck($name, &$isOK)
+    public function onAdminPanelCheck(string $name, bool &$isOK): bool
     {
-        if ($name == 'staleaccounts') {
+        if ($name === 'staleaccounts') {
             $isOK = true;
             return false;
         }
@@ -42,23 +53,23 @@ class StaleAccountsPlugin extends Plugin
         return true;
     }
 
-    function onEndShowStyles($action)
+    public function onEndShowStyles(Action $action): bool
     {
         $action->cssLink($this->path('css/stale-accounts.css'));
 
         return true;
     }
 
-    function onPluginVersion(array &$versions)
+    public function onPluginVersion(array &$versions): bool
     {
-        $versions[] = array('name' => 'Stale Accounts',
-                            'version' => self::VERSION,
-                            'author' => 'chimo',
-                            'homepage' => 'https://github.com/chimo/gs-staleAccounts',
-                            'description' =>
-                            // TRANS: Plugin description.
-                            _m('')); // TODO
+        $versions[] = [
+            'name'        => 'Stale Accounts',
+            'version'     => self::VERSION,
+            'author'      => 'chimo',
+            'homepage'    => 'https://github.com/chimo/gs-staleAccounts',
+            // TRANS: Plugin description.
+            'description' => _m(''), // TODO
+        ];
         return true;
     }
 }
-

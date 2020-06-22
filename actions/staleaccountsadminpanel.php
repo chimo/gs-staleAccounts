@@ -1,15 +1,16 @@
 <?php
-if (!defined('GNUSOCIAL')) {
-    exit(1);
-}
+
+defined('GNUSOCIAL') || die();
 
 class StaleaccountsadminpanelAction extends AdminPanelAction
 {
-    function title() {
+    public function title(): string
+    {
         return 'Stale accounts';
     }
 
-    function prepare(array $args=array()) {
+    public function prepare(array $args = []): bool
+    {
         parent::prepare($args);
 
         $this->page = $this->int('page', 1, null, 1);
@@ -18,7 +19,8 @@ class StaleaccountsadminpanelAction extends AdminPanelAction
         return true;
     }
 
-    function showContent() {
+    public function showContent(): void
+    {
         $properties = [
             'id',
             'nickname',
@@ -37,7 +39,8 @@ class StaleaccountsadminpanelAction extends AdminPanelAction
 
         $inactive_period = common_config('staleaccounts', 'inactive_period');
 
-        if ($inactive_period === false) { // No config set fallback to default
+        // No config set fallback to default
+        if ($inactive_period === false) {
             $inactive_period = 3;
         } else {
             // Make sure config is a number
@@ -77,18 +80,20 @@ class StaleaccountsadminpanelAction extends AdminPanelAction
         $cnt = $dataObj->N;
 
         if ($cnt === 0) {
-            $this->element('p', null,
-                'No accounts have been inactive for more than ' . $inactive_period . ' months.');
-
-            return true;
+            $this->element(
+                'p',
+                null,
+                "No accounts have been inactive for more than {$inactive_period} months."
+            );
+            return;
         }
 
         $this->elementStart('ul', array('class' => 'stale_profile_list'));
 
-        while($dataObj->fetch()) {
+        while ($dataObj->fetch()) {
             $profile = new Profile();
 
-            foreach($properties as $property) {
+            foreach ($properties as $property) {
                 $profile->$property = $dataObj->$property;
             }
 
@@ -109,25 +114,34 @@ class StaleaccountsadminpanelAction extends AdminPanelAction
         );
     }
 
-    function showNoticeForm() {
+    public function showNoticeForm(): void
+    {
         // Don't generate a notice form
     }
 
-    function showProfileBlock() {
+    public function showProfileBlock(): void
+    {
         // Don't generate a profile block
     }
 }
 
-class StaleProfileListItem extends ProfileListItem {
-    function showBio() {
+class StaleProfileListItem extends ProfileListItem
+{
+    public function showBio(): void
+    {
         parent::showBio();
 
         $latest_activity = $this->profile->latest_activity ?: 'NEVER';
 
-        $this->action->element('p', array('class' => 'note'), 'Latest activity: ' . $latest_activity);
+        $this->action->element(
+            'p',
+            ['class' => 'note'],
+            'Latest activity: ' . $latest_activity
+        );
     }
 
-    function showActions() {
+    public function showActions(): void
+    {
         parent::startActions();
 
         try {
@@ -141,11 +155,13 @@ class StaleProfileListItem extends ProfileListItem {
                 $form->show();
                 $this->action->elementEnd('li');
             } else {
-                $this->action->element('li', array('class' => 'unconfirmed_email'),
-                    'unconfirmed email' . $user->email);
-        }
-
-        } catch(Exception $e) {
+                $this->action->element(
+                    'li',
+                    ['class' => 'unconfirmed_email'],
+                    'unconfirmed email' . $user->email
+                );
+            }
+        } catch (Exception $e) {
             // This shouldn't be possible -- famous last words
             common_log(LOG_ERR, $e->getMessage());
         }
@@ -170,43 +186,49 @@ class StaleProfileListItem extends ProfileListItem {
  * I haven't found a way to use the "current theme's sprite file" from
  * the plugin's stylesheet.
  */
-class StaleReminderForm extends Form {
-    var $profile = null;
+class StaleReminderForm extends Form
+{
+    public $profile = null;
 
-    function __construct($out=null, $profile=null)
+    public function __construct($out = null, $profile = null)
     {
         parent::__construct($out);
         $this->profile = $profile;
     }
 
-    function id()
+    public function id(): ?string
     {
         return 'form_user_nudge';
     }
 
-    function formClass()
+    public function formClass(): string
     {
         return 'form_user_nudge ajax';
     }
 
-    function action()
+    public function action(): ?string
     {
-        return common_local_url('stalereminder', array('nickname' => $this->profile->nickname));
+        return common_local_url(
+            'stalereminder',
+            ['nickname' => $this->profile->nickname]
+        );
     }
 
-    function formLegend()
+    public function formLegend(): void
     {
         $this->out->element('legend', null, _('Remind this user'));
     }
 
-    function formActions()
+    public function formActions(): void
     {
-        $this->out->submit('submit',
-                           // TRANS: Button text to reminder/ping another user.
-                           _m('BUTTON','Remind'),
-                           'submit',
-                           null,
-                           // TRANS: Button title to reminder/ping another user.
-                           _('Send a reminder to this user.'));
+        $this->out->submit(
+            'submit',
+            // TRANS: Button text to reminder/ping another user.
+            _m('BUTTON', 'Remind'),
+            'submit',
+            null,
+            // TRANS: Button title to reminder/ping another user.
+            _('Send a reminder to this user.')
+        );
     }
 }

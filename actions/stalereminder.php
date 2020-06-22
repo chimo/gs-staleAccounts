@@ -1,15 +1,12 @@
 <?php
 
-if (!defined('GNUSOCIAL')) {
-    exit(1);
-}
+defined('GNUSOCIAL') || die();
 
-require_once INSTALLDIR.'/lib/mail.php';
+require_once INSTALLDIR . '/lib/mail.php';
 
 class StaleReminderAction extends Action
 {
-
-    function handle()
+    public function handle(): void
     {
         parent::handle();
 
@@ -20,9 +17,11 @@ class StaleReminderAction extends Action
         $user  = common_current_user();
         $other = User::getKV('nickname', $this->arg('nickname'));
 
-        if ($_SERVER['REQUEST_METHOD'] != 'POST') {
-            common_redirect(common_local_url('showstream',
-                array('nickname' => $other->nickname)));
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            common_redirect(common_local_url(
+                'showstream',
+                ['nickname' => $other->nickname]
+            ));
         }
 
         // CSRF protection
@@ -53,23 +52,27 @@ class StaleReminderAction extends Action
             $this->endHTML();
         } else {
             // display a confirmation to the user
-            common_redirect(common_local_url('showstream',
-                                             array('nickname' => $other->nickname)),
-                            303);
+            common_redirect(
+                common_local_url(
+                    'showstream',
+                    ['nickname' => $other->nickname]
+                ),
+                303
+            );
         }
     }
 
-     /**
-     * Do the actual notification
-     *
-     * @param class $from reminderer
-     * @param class $to reminderee
-     *
-     * @return nothing
-     */
-    function notify($from, $to)
+    /**
+    * Do the actual notification
+    *
+    * @param class $from reminderer
+    * @param class $to reminderee
+    *
+    * @return nothing
+    */
+    private function notify(string $from, string $to): void
     {
-        if ($to->id != $from->id) {
+        if ($to->id !== $from->id) {
             if ($to->email) {
                 // TODO
                 common_switch_locale($to->language);
@@ -82,18 +85,23 @@ class StaleReminderAction extends Action
                 // TRANS: Body for 'reminder' notification email.
                 // TRANS: %1$s is the sender's long name, $2$s is the receiver's nickname,
                 // TRANS: %3$s is a URL to post notices at.
-                $body = sprintf(_("%1\$s (%2\$s) is wondering what you are up to ".
-                                  "these days and is inviting you to post some news.\n\n".
-                                  "So let's hear from you :)\n\n".
-                                  "%3\$s\n\n".
-                                  "Don't reply to this email; it won't get to them."),
-                                $from_profile->getBestName(),
-                                $from->nickname,
-                                common_local_url('all', array('nickname' => $to->nickname))) .
-                        mail_footer_block();
+                $body = sprintf(
+                    _("%1\$s (%2\$s) is wondering what you are up to ".
+                      "these days and is inviting you to post some news.\n\n".
+                      "So let's hear from you :)\n\n".
+                      "%3\$s\n\n".
+                      "Don't reply to this email; it won't get to them."),
+                    $from_profile->getBestName(),
+                    $from->nickname,
+                    common_local_url('all', array('nickname' => $to->nickname))
+                ) . mail_footer_block();
                 common_switch_locale();
 
-                $headers = $this->mail_prepare_headers('nudge', $to->nickname, $from->nickname);
+                $headers = $this->mailPrepareHeaders(
+                    'nudge',
+                    $to->nickname,
+                    $from->nickname
+                );
 
                 return mail_to_user($to, $subject, $body, $headers);
             }
@@ -109,18 +117,21 @@ class StaleReminderAction extends Action
      *
      * @return array list of mail headers to include in the message
      */
-    function mail_prepare_headers($msg_type, $to, $from)
-    {
-        $headers = array(
+    private function mailPrepareHeaders(
+        string $msg_type,
+        string $to,
+        string $from
+    ): array {
+        $headers = [
             'X-GNUsocial-MessageType' => $msg_type,
             'X-GNUsocial-TargetUser'  => $to,
             'X-GNUsocial-SourceUser'  => $from,
             'X-GNUsocial-Domain'      => common_config('site', 'server')
-        );
+        ];
         return $headers;
     }
 
-    function isReadOnly($args)
+    public function isReadOnly($args): bool
     {
         return true;
     }
