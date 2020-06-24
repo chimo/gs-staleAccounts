@@ -1,15 +1,16 @@
 <?php
-if (!defined('GNUSOCIAL')) {
-    exit(1);
-}
+
+defined('GNUSOCIAL') || die();
 
 class StaleaccountsadminpanelAction extends AdminPanelAction
 {
-    function title() {
+    public function title(): string
+    {
         return 'Stale accounts';
     }
 
-    function prepare(array $args=array()) {
+    public function prepare(array $args = []): bool
+    {
         parent::prepare($args);
 
         $this->page = $this->int('page', 1, null, 1);
@@ -18,82 +19,54 @@ class StaleaccountsadminpanelAction extends AdminPanelAction
         return true;
     }
 
-    function showContent() {
-        $properties = [
-            'id',
-            'nickname',
-            'fullname',
-            'profileurl',
-            'homepage',
-            'bio',
-            'location',
-            'lat',
-            'lon',
-            'location_id',
-            'location_ns',
-            'created',
-            'modified'
-        ];
-
-        $inactive_period = common_config('staleaccounts', 'inactive_period');
-
-        if ($inactive_period === false) { // No config set fallback to default
-            $inactive_period = 3;
-        } else {
-            // Make sure config is a number
-            // Returns 1 if it's an object, 0 for other non-numbers
-            $inactive_period = floatval($inactive_period);
-        }
-
-        // Calculate stale date (today - $inactive_period)
-        $stale_date = new DateTime();
-        $stale_date->modify('-' . $inactive_period . ' month');
-        $stale_date = $stale_date->format('Y-m-d');
+    public function showContent(): void
+    {
+        // Make sure config is a number
+        // If not, set to default
+        $inactive_period = filter_var(
+            common_config('staleaccounts', 'inactive_period'),
+            FILTER_VALIDATE_INT,
+            ['options' => ['default' => 3]]
+        );
 
         $offset = ($this->page - 1) * PROFILES_PER_PAGE;
         $limit  = PROFILES_PER_PAGE + 1;
 
-        $dataObj = new DB_DataObject();
+        $profile = new Profile();
 
-        // Custom query because I only want to hit the db once
-        $dataObj->query(
-            'SELECT * FROM
-            (
-                SELECT local_profiles.*, MAX(n.created) as latest_activity FROM
-                (
-                    SELECT p.*
-                    FROM profile p
-                    JOIN user u ON u.id = p.id
-                ) local_profiles
-                LEFT JOIN notice n ON local_profiles.id = n.profile_id
-                GROUP BY local_profiles.id
-                ORDER BY latest_activity
-            ) z
-            WHERE z.latest_activity < "' . $stale_date . '"
-            OR z.latest_activity IS NULL
-            LIMIT ' . $offset . ', ' . $limit . ';'
-        );
+        $user_table = common_database_tablename('user');
+        $profile->_join .= "\n" . <<<END
+            INNER JOIN (
+              SELECT profile.id, MAX(notice.created) AS latest_activity
+                FROM profile
+                INNER JOIN {$user_table} USING (id)
+                LEFT JOIN notice ON profile.id = notice.profile_id
+                GROUP BY profile.id
+            ) AS t1 USING (id)
+            END;
 
-        $cnt = $dataObj->N;
+        $profile->whereAdd(sprintf(
+            "latest_activity < CURRENT_DATE - INTERVAL '%d' MONTH",
+            $inactive_period
+        ));
+        $profile->whereAdd('latest_activity IS NULL', 'OR');
 
+        $profile->orderBy('latest_activity, id');
+        $profile->limit($offset, $limit);
+
+        $cnt = $profile->find() ? $profile->N : 0;
         if ($cnt === 0) {
-            $this->element('p', null,
-                'No accounts have been inactive for more than ' . $inactive_period . ' months.');
-
-            return true;
+            $this->element(
+                'p',
+                null,
+                "No accounts have been inactive for more than {$inactive_period} months."
+            );
+            return;
         }
 
-        $this->elementStart('ul', array('class' => 'stale_profile_list'));
+        $this->elementStart('ul', ['class' => 'stale_profile_list']);
 
-        while($dataObj->fetch()) {
-            $profile = new Profile();
-
-            foreach($properties as $property) {
-                $profile->$property = $dataObj->$property;
-            }
-
-            $profile->latest_activity = $dataObj->latest_activity;
-
+        while ($profile->fetch()) {
             $pli = new StaleProfileListItem($profile, $this);
             $pli->show();
         }
@@ -109,25 +82,34 @@ class StaleaccountsadminpanelAction extends AdminPanelAction
         );
     }
 
-    function showNoticeForm() {
+    public function showNoticeForm(): void
+    {
         // Don't generate a notice form
     }
 
-    function showProfileBlock() {
+    public function showProfileBlock(): void
+    {
         // Don't generate a profile block
     }
 }
 
-class StaleProfileListItem extends ProfileListItem {
-    function showBio() {
+class StaleProfileListItem extends ProfileListItem
+{
+    public function showBio(): void
+    {
         parent::showBio();
 
         $latest_activity = $this->profile->latest_activity ?: 'NEVER';
 
-        $this->action->element('p', array('class' => 'note'), 'Latest activity: ' . $latest_activity);
+        $this->action->element(
+            'p',
+            ['class' => 'note'],
+            'Latest activity: ' . $latest_activity
+        );
     }
 
-    function showActions() {
+    public function showActions(): void
+    {
         parent::startActions();
 
         try {
@@ -141,11 +123,13 @@ class StaleProfileListItem extends ProfileListItem {
                 $form->show();
                 $this->action->elementEnd('li');
             } else {
-                $this->action->element('li', array('class' => 'unconfirmed_email'),
-                    'unconfirmed email' . $user->email);
-        }
-
-        } catch(Exception $e) {
+                $this->action->element(
+                    'li',
+                    ['class' => 'unconfirmed_email'],
+                    'unconfirmed email' . $user->email
+                );
+            }
+        } catch (Exception $e) {
             // This shouldn't be possible -- famous last words
             common_log(LOG_ERR, $e->getMessage());
         }
@@ -170,43 +154,49 @@ class StaleProfileListItem extends ProfileListItem {
  * I haven't found a way to use the "current theme's sprite file" from
  * the plugin's stylesheet.
  */
-class StaleReminderForm extends Form {
-    var $profile = null;
+class StaleReminderForm extends Form
+{
+    public $profile = null;
 
-    function __construct($out=null, $profile=null)
+    public function __construct($out = null, $profile = null)
     {
         parent::__construct($out);
         $this->profile = $profile;
     }
 
-    function id()
+    public function id(): ?string
     {
         return 'form_user_nudge';
     }
 
-    function formClass()
+    public function formClass(): string
     {
         return 'form_user_nudge ajax';
     }
 
-    function action()
+    public function action(): ?string
     {
-        return common_local_url('stalereminder', array('nickname' => $this->profile->nickname));
+        return common_local_url(
+            'stalereminder',
+            ['nickname' => $this->profile->nickname]
+        );
     }
 
-    function formLegend()
+    public function formLegend(): void
     {
         $this->out->element('legend', null, _('Remind this user'));
     }
 
-    function formActions()
+    public function formActions(): void
     {
-        $this->out->submit('submit',
-                           // TRANS: Button text to reminder/ping another user.
-                           _m('BUTTON','Remind'),
-                           'submit',
-                           null,
-                           // TRANS: Button title to reminder/ping another user.
-                           _('Send a reminder to this user.'));
+        $this->out->submit(
+            'submit',
+            // TRANS: Button text to reminder/ping another user.
+            _m('BUTTON', 'Remind'),
+            'submit',
+            null,
+            // TRANS: Button title to reminder/ping another user.
+            _('Send a reminder to this user.')
+        );
     }
 }
