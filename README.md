@@ -1,3 +1,7 @@
+# Note
+
+I'm done with this. If someone wants to maintain it send me a note and I'll transfer the repo. Or just fork it, or whatever.
+
 # List inactive accounts on a GNU social instance
 
 ## Installation
